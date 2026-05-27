@@ -52,6 +52,28 @@
             border-color: #8b5cf6;
             box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1);
         }
+
+        /* Print styling specifically designed for high-end branded client invoices */
+        @media print {
+            body * {
+                visibility: hidden;
+            }
+            #print-area, #print-area * {
+                visibility: visible;
+            }
+            #print-area {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+                background: white !important;
+                color: black !important;
+                padding: 1.5in !important;
+            }
+            .no-print {
+                display: none !important;
+            }
+        }
     </style>
 </head>
 <body class="text-stone-800 min-h-screen flex flex-col antialiased whimsy-gradient">
@@ -157,7 +179,7 @@
             </div>
         </div>
 
-        <!-- ================= NEW PACKAGES & ONE-TIME SERVICES ================= -->
+        <!-- ================= RETAINER PACKAGES & ONE-TIME SERVICES ================= -->
         <section id="packages-section" class="border-t border-purple-100 bg-white/40 py-16">
             <div class="max-w-5xl mx-auto px-6">
                 <div class="text-center max-w-2xl mx-auto mb-12">
@@ -320,7 +342,6 @@
             </div>
         </section>
 
-        <!-- Contact & Booking Section -->
         <div id="booking-section" class="border-t border-purple-100 bg-white/40 py-16">
             <div class="max-w-5xl mx-auto px-6">
                 <div class="grid grid-cols-1 lg:grid-cols-12 gap-12 items-start">
@@ -413,7 +434,6 @@
                                 </div>
                                 <div>
                                     <label class="block text-[11px] font-medium text-stone-500 mb-1">Preferred Budget Package</label>
-                                    <!-- Dynamic elements depending on billing type -->
                                     <select id="leadPackageDropdown" class="w-full px-3 py-2 text-xs rounded-lg border border-stone-200 bg-stone-50/50 bg-white">
                                         <option value="Lite Whimsy (K1,500/mo)">Lite Whimsy Package — K1,500/month</option>
                                         <option value="Standard Whimsy (K3,000/mo)">Standard Whimsy Package — K3,000/month</option>
@@ -519,7 +539,6 @@
                 </div>
             </div>
 
-            <!-- Stats Dashboard Metrics -->
             <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
                 <!-- Stat Card 1: Active Retainers -->
                 <div class="bg-white p-5 rounded-2xl border border-purple-100 shadow-sm">
@@ -565,7 +584,7 @@
             <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
                 
                 <!-- LEFT: Client Filter & Database List -->
-                <div class="lg:col-span-8 space-y-6">
+                <div class="lg:col-span-7 space-y-6">
                     <div class="bg-white rounded-2xl border border-purple-100 p-5 shadow-sm">
                         
                         <!-- Search and Segmentation filters -->
@@ -631,12 +650,12 @@
                 </div>
 
                 <!-- RIGHT: Selected Client Detail Panel -->
-                <div class="lg:col-span-4">
-                    <div id="focused-client-panel" class="bg-white rounded-2xl border border-purple-100 p-5 flex flex-col min-h-[450px] shadow-sm">
+                <div class="lg:col-span-5">
+                    <div id="focused-client-panel" class="bg-white rounded-2xl border border-purple-100 p-5 flex flex-col min-h-[480px] shadow-sm">
                         <!-- Select client fallback -->
                         <div id="no-selected-client" class="flex-grow flex flex-col items-center justify-center text-center py-16 text-stone-400 text-xs">
                             <i data-lucide="user" class="w-8 h-8 text-purple-200 mb-3 animate-bounce"></i>
-                            <p class="font-light max-w-[200px]">Select any client record to open deep insights, track actions, and run AI tools.</p>
+                            <p class="font-light max-w-[200px]">Select any client record to open deep insights, track actions, track billable time, and print PGK Invoices.</p>
                         </div>
 
                         <!-- Active client detail -->
@@ -658,6 +677,10 @@
                                         <button onclick="triggerWhatsAppChat()" class="p-1 text-emerald-500 hover:text-emerald-700 rounded transition-all" title="WhatsApp Chat Setup">
                                             <i data-lucide="message-circle" class="w-4.5 h-4.5"></i>
                                         </button>
+                                        <!-- Invoice Maker Trigger -->
+                                        <button onclick="openInvoiceMaker()" class="p-1 text-blue-500 hover:text-blue-700 rounded transition-all" title="Generate Invoice/Receipt">
+                                            <i data-lucide="receipt" class="w-4.5 h-4.5"></i>
+                                        </button>
                                         <button onclick="editSelectedClient()" class="p-1 text-stone-400 hover:text-stone-700 rounded transition-all" title="Edit Client Parameters">
                                             <i data-lucide="edit-3" class="w-4 h-4"></i>
                                         </button>
@@ -667,9 +690,41 @@
                                     </div>
                                 </div>
 
+                                <!-- Retainer Hour & Stopwatch Tracker -->
+                                <div id="timeTrackerSection" class="p-3 bg-purple-50/40 border border-purple-100/70 rounded-xl space-y-2">
+                                    <div class="flex justify-between items-center text-xs">
+                                        <span class="font-medium text-purple-950 flex items-center gap-1">
+                                            <i data-lucide="clock" class="w-3.5 h-3.5 text-purple-600"></i>
+                                            <span>Retainer Hours Tracker</span>
+                                        </span>
+                                        <span id="trackerLimitLabel" class="text-[10px] text-purple-600 font-semibold">Limit: 10 hrs</span>
+                                    </div>
+                                    <div class="w-full bg-stone-100 rounded-full h-2 overflow-hidden border border-stone-200">
+                                        <div id="trackerProgressBar" class="bg-purple-600 h-2 rounded-full transition-all duration-300" style="width: 40%"></div>
+                                    </div>
+                                    <div class="flex justify-between items-center text-[11px]">
+                                        <div class="text-stone-500">
+                                            Logged: <span id="trackerTotalHours" class="font-semibold text-stone-850">4.50</span> / <span id="trackerTargetHours">10</span> hrs
+                                        </div>
+                                        <!-- Stopwatch Area -->
+                                        <div class="flex items-center space-x-1.5 bg-white px-2 py-0.5 rounded-lg border border-stone-200 shadow-sm">
+                                            <span id="stopwatchTimer" class="font-mono text-purple-700 font-semibold text-xs">00:00:00</span>
+                                            <button id="btnPlayPause" onclick="toggleStopwatch()" class="text-emerald-600 hover:text-emerald-700">
+                                                <i data-lucide="play" class="w-3 h-3 fill-emerald-600"></i>
+                                            </button>
+                                            <button onclick="resetStopwatch()" class="text-stone-400 hover:text-stone-600">
+                                                <i data-lucide="rotate-ccw" class="w-3 h-3"></i>
+                                            </button>
+                                            <button onclick="logStopwatchTime()" class="text-purple-600 hover:text-purple-700 font-bold text-[9px] uppercase tracking-wider pl-1 border-l border-stone-100">
+                                                Log Time
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+
                                 <div>
                                     <h4 class="text-[10px] font-semibold uppercase tracking-wider text-stone-400 mb-1">Operational Directives & Package Details</h4>
-                                    <div class="p-3 bg-purple-50/50 border border-purple-100 rounded-lg text-xs font-light text-stone-600 max-h-[105px] overflow-y-auto leading-relaxed" id="detailClientNotes">
+                                    <div class="p-3 bg-stone-50 border border-stone-100 rounded-lg text-xs font-light text-stone-600 max-h-[105px] overflow-y-auto leading-relaxed" id="detailClientNotes">
                                         Client instructions...
                                     </div>
                                 </div>
@@ -862,6 +917,14 @@
                 </div>
             </div>
 
+            <!-- Total Retainer Target Limit Hours -->
+            <div id="modalHoursField" class="grid grid-cols-1 gap-3">
+                <div>
+                    <label class="block text-[11px] font-medium text-stone-500 mb-1">Monthly Retainer Allocation Limit (Hours)</label>
+                    <input type="number" id="modalTargetHours" class="w-full px-2.5 py-1.5 rounded-lg border border-stone-200 outline-none" placeholder="25" value="25">
+                </div>
+            </div>
+
             <div>
                 <label class="block text-[11px] font-medium text-stone-500 mb-1">Onboarding Status</label>
                 <select id="modalClientStatus" required class="w-full px-2.5 py-1.5 rounded-lg border border-stone-200 outline-none bg-white">
@@ -882,6 +945,108 @@
                 <button type="submit" class="px-4 py-1.5 bg-purple-600 hover:bg-purple-700 text-white rounded-lg shadow-sm">Save Record</button>
             </div>
         </form>
+    </div>
+</div>
+
+<!-- PRINTABLE BRANDED INVOICE GENERATOR MODAL -->
+<div id="invoiceMakerModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-stone-900/40 backdrop-blur-sm p-4">
+    <div class="bg-white rounded-2xl max-w-2xl w-full border border-purple-100 shadow-2xl flex flex-col max-h-[85vh] overflow-hidden transform transition-all duration-200 scale-95 opacity-0" id="invoiceModalContent">
+        <div class="p-4 border-b border-purple-100 flex justify-between items-center bg-purple-50 no-print">
+            <h3 class="text-sm font-semibold text-purple-950 flex items-center gap-2">
+                <i data-lucide="receipt" class="w-4 h-4 text-purple-600"></i>
+                <span>Branded Invoice / Receipt Builder</span>
+            </h3>
+            <button onclick="closeInvoiceMaker()" class="p-1 rounded text-stone-400 hover:text-stone-600 transition-all">
+                <i data-lucide="x" class="w-4 h-4"></i>
+            </button>
+        </div>
+
+        <div class="overflow-y-auto p-6 flex-grow" id="print-area">
+            <!-- Branded Clean Invoice Sheet Content -->
+            <div class="flex justify-between items-start border-b border-stone-100 pb-6">
+                <div>
+                    <h1 class="serif-title text-2xl font-semibold tracking-tight text-stone-900">Lili's Whimsy VA</h1>
+                    <p class="text-[10px] text-purple-600 font-bold uppercase tracking-wider">Mini VA Services</p>
+                    <p class="text-xs text-stone-400 mt-2 font-light">liliswhimsy.va@gmail.com</p>
+                    <p class="text-xs text-stone-400 font-light">Port Moresby, Papua New Guinea</p>
+                </div>
+                <div class="text-right">
+                    <h2 class="text-xl font-light text-stone-400 tracking-wider">INVOICE</h2>
+                    <p class="text-xs text-stone-700 font-medium mt-1">Invoice #: <span id="invoiceNumber" class="font-mono">LW-2026-001</span></p>
+                    <p class="text-xs text-stone-400 font-light">Date: <span id="invoiceDate">May 27, 2026</span></p>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-4 py-6 text-xs font-light">
+                <div>
+                    <h3 class="text-[10px] uppercase font-semibold text-stone-400 mb-1">Billed To:</h3>
+                    <p id="invoiceBilledToName" class="font-semibold text-stone-900">Sarah Jenkins</p>
+                    <p id="invoiceBilledToCompany" class="text-stone-500">Luxe Linen Co.</p>
+                    <p id="invoiceBilledToEmail" class="text-stone-400 mt-1">sarah@luxelinen.com</p>
+                </div>
+                <div class="text-right">
+                    <h3 class="text-[10px] uppercase font-semibold text-stone-400 mb-1">Payment Method:</h3>
+                    <p class="text-stone-900 font-medium">Direct PNG Bank Transfer (BSP/Kina)</p>
+                    <p class="text-stone-400 mt-1">Currency: PGK (Kina)</p>
+                </div>
+            </div>
+
+            <!-- Invoice Itemizer Table -->
+            <div class="border-t border-stone-200/60 pt-4">
+                <table class="w-full text-left text-xs">
+                    <thead>
+                        <tr class="border-b border-stone-200 text-stone-400 font-semibold text-[10px] uppercase tracking-wider pb-2">
+                            <th class="py-2 w-3/5">Description of Administrative Tasks</th>
+                            <th class="py-2 text-center w-1/12">Qty</th>
+                            <th class="py-2 text-right w-1/5">Rate (PGK)</th>
+                            <th class="py-2 text-right w-1/5">Subtotal</th>
+                            <th class="py-2 text-center w-1/12 no-print">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="invoiceLineItems" class="divide-y divide-stone-100">
+                        <!-- Custom items generated dynamically -->
+                    </tbody>
+                </table>
+
+                <div class="mt-4 no-print">
+                    <button onclick="addInvoiceLineItemRow()" class="px-2 py-1 bg-purple-50 hover:bg-purple-100 border border-purple-200 text-purple-700 text-[10px] font-semibold rounded flex items-center gap-1">
+                        <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+                        <span>Add Billing Line Item</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Totals Area -->
+            <div class="flex justify-end pt-6 border-t border-stone-200/60 mt-6">
+                <div class="w-1/2 text-xs space-y-2">
+                    <div class="flex justify-between text-stone-400">
+                        <span>Invoice Total</span>
+                        <span id="invoiceSubtotal" class="font-medium text-stone-900">K3,000.00</span>
+                    </div>
+                    <div class="flex justify-between font-semibold text-sm border-t border-stone-200 pt-2 text-stone-900">
+                        <span>Grand Total (PGK)</span>
+                        <span id="invoiceGrandTotal">K3,000.00</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Simple Payment Footnote -->
+            <div class="mt-12 text-[10px] text-stone-400 text-center font-light leading-relaxed">
+                <p>Thank you for partnering with Lili's Whimsy VA Services to streamline your business backend.</p>
+                <p class="mt-1">Payments are requested within 7 working days. Accounts are kept clean with transparent invoicing.</p>
+            </div>
+        </div>
+
+        <div class="p-4 border-t border-purple-100 bg-purple-50/50 no-print flex justify-between items-center rounded-b-2xl">
+            <span class="text-stone-400 text-[10px] font-light">Invoice layout fits standard A4 portrait sheets.</span>
+            <div class="flex space-x-2">
+                <button onclick="closeInvoiceMaker()" class="px-3 py-1.5 border border-stone-200 text-stone-600 text-xs font-medium rounded-lg hover:bg-stone-100">Close</button>
+                <button onclick="window.print()" class="px-3 py-1.5 bg-purple-600 hover:bg-purple-700 text-white text-xs font-medium rounded-lg flex items-center gap-1 shadow-md shadow-purple-100">
+                    <i data-lucide="printer" class="w-3.5 h-3.5"></i>
+                    <span>Print or Save PDF</span>
+                </button>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -906,7 +1071,6 @@
 </div>
 
 <script>
-    // Updated Seed Database with package options, categorizing Retainer vs. One-Time Projects
     const defaultClients = [
         {
             id: "client-1",
@@ -919,6 +1083,8 @@
             packageOption: "Standard Whimsy (K3,000/mo)",
             value: 3000, 
             status: "Active",
+            targetHours: 25,
+            loggedHours: 14.5,
             notes: "Standard Whimsy Monthly Retainer. Sarah requires bookkeeping alignment on the 25th of each month. Prioritize shipping reconciliation details within Papua New Guinea.",
             tasks: [
                 { id: "task-1-1", title: "Balance current PGK Accounts", completed: true },
@@ -936,6 +1102,8 @@
             packageOption: "Lite Whimsy (K1,500/mo)",
             value: 1500, 
             status: "Active",
+            targetHours: 10,
+            loggedHours: 3.2,
             notes: "Lite Whimsy Monthly Retainer. Likes clean editorial layouts with soft lavender, butter gold, and earthy pastel highlights matching their interior brand theme.",
             tasks: [
                 { id: "task-2-1", title: "Deliver social aesthetic mockups", completed: true },
@@ -953,6 +1121,8 @@
             packageOption: "Document Creation (K50)",
             value: 50, 
             status: "Onboarding",
+            targetHours: 2,
+            loggedHours: 0,
             notes: "One-Time Document Creation task. Craft standard terms draft for wholesale organic agreements.",
             tasks: [
                 { id: "task-3-1", title: "Draft document outline in PGK format", completed: false }
@@ -969,6 +1139,8 @@
             packageOption: "Document Editing (K25)",
             value: 25, 
             status: "Active",
+            targetHours: 1,
+            loggedHours: 0.8,
             notes: "One-Time Document Editing Polish. Quick restructuring and grammar check of 2-page tech pitch paper.",
             tasks: [
                 { id: "task-4-1", title: "Proofread financial draft overview", completed: true },
@@ -977,10 +1149,14 @@
         }
     ];
 
-    // Load clients from LocalStorage or seed with defaults
     let clients = JSON.parse(localStorage.getItem('whimsy_crm_clients')) || defaultClients;
     let selectedClientId = null;
     let isAuthorized = false; // CRM Authorization state
+
+    // Real-Time Stopwatch Tracking States
+    let stopwatchInterval = null;
+    let stopwatchSeconds = 0;
+    let isStopwatchRunning = false;
 
     // Synchronize function to update browser state
     function saveDatabase() {
@@ -1096,15 +1272,23 @@
         const notes = document.getElementById('leadNotes').value;
         const phone = document.getElementById('leadPhone').value || "";
 
-        // Extract value from text like "Lite Whimsy (K1,500/mo)" or "Premium Copy Launch (K900)"
+        // Extract value from text like "Lite Whimsy (K1,500/mo)"
         const valMatch = packageOption.match(/K([0-9,]+)/);
         const extractedValue = valMatch ? Number(valMatch[1].replace(/,/g, '')) : 1500;
+
+        // Set realistic starting hours targets
+        let targetHours = 25;
+        if (packageOption.includes("Lite")) targetHours = 10;
+        if (packageOption.includes("Premium")) targetHours = 45;
+        if (billingType === "One-Time") targetHours = 2;
 
         const newClient = {
             id: "lead-" + Date.now(),
             name, company, email, phone, service, billingType, packageOption,
             value: extractedValue,
             status: "Lead",
+            targetHours: targetHours,
+            loggedHours: 0,
             notes: `Inquiry Package: ${packageOption}. Client notes: ${notes}`,
             tasks: [
                 { id: "task-" + Date.now() + "-1", title: "Review incoming goals worksheet", completed: true },
@@ -1235,6 +1419,11 @@
     }
 
     function selectClient(clientId) {
+        // Automatically stop running stopwatch if user changes clients
+        if (isStopwatchRunning) {
+            resetStopwatch();
+        }
+
         selectedClientId = clientId;
         const client = clients.find(c => c.id === clientId);
         if (!client) return;
@@ -1258,8 +1447,89 @@
         typeBadge.innerText = client.billingType === 'Retainer' ? '🔄 Monthly Retainer' : '💼 One-Time Project';
         typeBadge.className = `inline-block text-[9px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-md mb-1 ${client.billingType === 'Retainer' ? 'bg-indigo-50 text-indigo-700' : 'bg-amber-50 text-amber-700'}`;
 
+        // Sync Time Tracker Elements
+        syncTimeTrackerUI(client);
+
         renderClientTasks(client);
         renderCRM();
+    }
+
+    function syncTimeTrackerUI(client) {
+        const targetHours = client.targetHours || (client.billingType === 'Retainer' ? 25 : 2);
+        const loggedHours = client.loggedHours || 0;
+        
+        document.getElementById('trackerTargetHours').innerText = targetHours;
+        document.getElementById('trackerTotalHours').innerText = Number(loggedHours).toFixed(2);
+        document.getElementById('trackerLimitLabel').innerText = `Limit: ${targetHours} hrs`;
+
+        const percent = Math.min((loggedHours / targetHours) * 100, 100);
+        const progressEl = document.getElementById('trackerProgressBar');
+        progressEl.style.width = `${percent}%`;
+
+        // Color coding based on budget use
+        if (percent > 90) {
+            progressEl.className = "bg-rose-500 h-2 rounded-full transition-all duration-300";
+        } else if (percent > 75) {
+            progressEl.className = "bg-amber-500 h-2 rounded-full transition-all duration-300";
+        } else {
+            progressEl.className = "bg-purple-600 h-2 rounded-full transition-all duration-300";
+        }
+    }
+
+    function toggleStopwatch() {
+        if (isStopwatchRunning) {
+            // Pause
+            clearInterval(stopwatchInterval);
+            isStopwatchRunning = false;
+            document.getElementById('btnPlayPause').innerHTML = `<i data-lucide="play" class="w-3 h-3 fill-emerald-600 text-emerald-600"></i>`;
+            showToast("Stopwatch Paused.");
+        } else {
+            // Play
+            isStopwatchRunning = true;
+            stopwatchInterval = setInterval(updateStopwatchTime, 1000);
+            document.getElementById('btnPlayPause').innerHTML = `<i data-lucide="pause" class="w-3 h-3 fill-rose-600 text-rose-600"></i>`;
+            showToast("Stopwatch running! Tracking billable operations.");
+        }
+        lucide.createIcons();
+    }
+
+    function updateStopwatchTime() {
+        stopwatchSeconds++;
+        const hours = Math.floor(stopwatchSeconds / 3600);
+        const mins = Math.floor((stopwatchSeconds % 3600) / 60);
+        const secs = stopwatchSeconds % 60;
+
+        const display = `${String(hours).padStart(2, '0')}:${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+        document.getElementById('stopwatchTimer').innerText = display;
+    }
+
+    function resetStopwatch() {
+        clearInterval(stopwatchInterval);
+        stopwatchSeconds = 0;
+        isStopwatchRunning = false;
+        document.getElementById('stopwatchTimer').innerText = "00:00:00";
+        document.getElementById('btnPlayPause').innerHTML = `<i data-lucide="play" class="w-3 h-3 fill-emerald-600 text-emerald-600"></i>`;
+        lucide.createIcons();
+    }
+
+    function logStopwatchTime() {
+        if (!selectedClientId) return;
+        const client = clients.find(c => c.id === selectedClientId);
+        if (!client) return;
+
+        const loggedHoursFromSession = stopwatchSeconds / 3600;
+        
+        if (stopwatchSeconds < 10) {
+            showToast("Session too short to record. Run timer while completing tasks.");
+            return;
+        }
+
+        client.loggedHours = (client.loggedHours || 0) + loggedHoursFromSession;
+        saveDatabase();
+        
+        showToast(`Logged +${(loggedHoursFromSession * 60).toFixed(1)} minutes into workspace hours!`);
+        syncTimeTrackerUI(client);
+        resetStopwatch();
     }
 
     function renderClientTasks(client) {
@@ -1356,9 +1626,108 @@
         window.open(waUrl, '_blank');
     }
 
+    function openInvoiceMaker() {
+        const client = clients.find(c => c.id === selectedClientId);
+        if (!client) return;
+
+        // Populate base fields
+        document.getElementById('invoiceNumber').innerText = `LW-${new Date().getFullYear()}-${Math.floor(100 + Math.random() * 900)}`;
+        document.getElementById('invoiceDate').innerText = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+        
+        document.getElementById('invoiceBilledToName').innerText = client.name;
+        document.getElementById('invoiceBilledToCompany').innerText = client.company || "Individual Client";
+        document.getElementById('invoiceBilledToEmail').innerText = client.email;
+
+        // Populate dynamic item lists with a reasonable seed
+        const tbody = document.getElementById('invoiceLineItems');
+        tbody.innerHTML = '';
+
+        // Add default client service line item
+        const basePrice = client.value || 1500;
+        const serviceName = `${client.service} — ${client.packageOption || "Standard Support Package"}`;
+        
+        tbody.innerHTML += createInvoiceLineItemHTML(serviceName, 1, basePrice);
+        
+        // Add helper sample second row depending on service class
+        if (client.billingType === 'Retainer' && client.loggedHours > 0) {
+            tbody.innerHTML += createInvoiceLineItemHTML(`Additional Billable VA Support Session`, 1, 0);
+        }
+
+        recalculateInvoiceTotals();
+
+        const modal = document.getElementById('invoiceMakerModal');
+        const content = document.getElementById('invoiceModalContent');
+        modal.classList.remove('hidden');
+        setTimeout(() => {
+            content.classList.remove('scale-95', 'opacity-0');
+            content.classList.add('scale-100', 'opacity-100');
+        }, 10);
+    }
+
+    function createInvoiceLineItemHTML(desc = "", qty = 1, rate = 0) {
+        const rowId = "invoice-row-" + Date.now() + Math.floor(Math.random() * 100);
+        return `
+            <tr id="${rowId}" class="border-b border-stone-50">
+                <td class="py-3 pr-2">
+                    <input type="text" value="${desc}" onchange="recalculateInvoiceTotals()" class="w-full bg-transparent focus:bg-stone-50 px-1 py-0.5 border-b border-transparent focus:border-purple-200 outline-none">
+                </td>
+                <td class="py-3 text-center">
+                    <input type="number" value="${qty}" min="1" onchange="recalculateInvoiceRowTotal('${rowId}'); recalculateInvoiceTotals();" class="w-12 text-center bg-transparent focus:bg-stone-50 rounded outline-none border border-transparent focus:border-stone-200">
+                </td>
+                <td class="py-3 text-right font-mono">
+                    <input type="number" value="${rate}" min="0" onchange="recalculateInvoiceRowTotal('${rowId}'); recalculateInvoiceTotals();" class="w-20 text-right bg-transparent focus:bg-stone-50 rounded outline-none border border-transparent focus:border-stone-200">
+                </td>
+                <td class="py-3 text-right font-semibold text-stone-800 font-mono row-subtotal-val">K${(qty * rate).toFixed(2)}</td>
+                <td class="py-3 text-center no-print">
+                    <button onclick="document.getElementById('${rowId}').remove(); recalculateInvoiceTotals();" class="text-stone-300 hover:text-rose-600 transition-colors">
+                        <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                    </button>
+                </td>
+            </tr>
+        `;
+    }
+
+    function addInvoiceLineItemRow() {
+        const tbody = document.getElementById('invoiceLineItems');
+        tbody.insertAdjacentHTML('beforeend', createInvoiceLineItemHTML("Branded Creative Content Task", 1, 50));
+        recalculateInvoiceTotals();
+        lucide.createIcons();
+    }
+
+    function recalculateInvoiceRowTotal(rowId) {
+        const row = document.getElementById(rowId);
+        if (!row) return;
+        const qty = Number(row.querySelectorAll('input[type="number"]')[0].value) || 0;
+        const rate = Number(row.querySelectorAll('input[type="number"]')[1].value) || 0;
+        row.querySelector('.row-subtotal-val').innerText = `K${(qty * rate).toFixed(2)}`;
+    }
+
+    function recalculateInvoiceTotals() {
+        const rows = document.querySelectorAll('#invoiceLineItems tr');
+        let runningTotal = 0;
+        rows.forEach(row => {
+            const qty = Number(row.querySelectorAll('input[type="number"]')[0].value) || 0;
+            const rate = Number(row.querySelectorAll('input[type="number"]')[1].value) || 0;
+            runningTotal += (qty * rate);
+        });
+
+        document.getElementById('invoiceSubtotal').innerText = `K${runningTotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+        document.getElementById('invoiceGrandTotal').innerText = `K${runningTotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    }
+
+    function closeInvoiceMaker() {
+        const modal = document.getElementById('invoiceMakerModal');
+        const content = document.getElementById('invoiceModalContent');
+        content.classList.add('scale-95', 'opacity-0');
+        content.classList.remove('scale-100', 'opacity-100');
+        setTimeout(() => {
+            modal.classList.add('hidden');
+        }, 200);
+    }
+
     function exportCSV() {
         let csvContent = "data:text/csv;charset=utf-8,";
-        csvContent += "Client Name,Business,Email,Phone,Billing Type,Package Chosen,Service Category,Monthly Value (PGK),Status,Operational Guidelines\r\n";
+        csvContent += "Client Name,Business,Email,Phone,Billing Type,Package Chosen,Service Category,Monthly Value (PGK),Hours Target,Hours Logged,Status,Operational Guidelines\r\n";
         
         clients.forEach(c => {
             const row = [
@@ -1370,6 +1739,8 @@
                 `"${c.packageOption || ''}"`,
                 `"${c.service}"`,
                 `"${c.value}"`,
+                `"${c.targetHours || 25}"`,
+                `"${c.loggedHours || 0}"`,
                 `"${c.status}"`,
                 `"${(c.notes || '').replace(/"/g, '""')}"`
             ].join(",");
@@ -1435,16 +1806,17 @@
         showToast("Workspace configuration synced!");
     }
 
-    // Synchronize Client Options inside the Admin Editor Modal
     function toggleModalClientOptions() {
         const billingType = document.getElementById('modalClientBillingType').value;
         const dropdown = document.getElementById('modalClientPackageOption');
         const label = document.getElementById('modalPackageLabel');
+        const targetHoursField = document.getElementById('modalHoursField');
 
         dropdown.innerHTML = '';
 
         if (billingType === 'Retainer') {
             label.innerText = 'Preferred Package Option';
+            targetHoursField.classList.remove('hidden');
             dropdown.innerHTML = `
                 <option value="Lite Whimsy (K1,500/mo)">Lite Whimsy — K1,500/mo</option>
                 <option value="Standard Whimsy (K3,000/mo)">Standard Whimsy — K3,000/mo</option>
@@ -1453,6 +1825,7 @@
             `;
         } else {
             label.innerText = 'Preferred One-Time Project';
+            targetHoursField.classList.add('hidden');
             dropdown.innerHTML = `
                 <option value="Document Creation (K50)">Document Creation — K50</option>
                 <option value="Document Editing (K25)">Document Editing — K25</option>
@@ -1490,6 +1863,7 @@
         document.getElementById('modalClientService').value = 'Basic Bookkeeping';
         document.getElementById('modalClientStatus').value = 'Lead';
         document.getElementById('modalClientNotes').value = '';
+        document.getElementById('modalTargetHours').value = '25';
 
         const modal = document.getElementById('clientModal');
         const content = document.getElementById('clientModalContent');
@@ -1521,6 +1895,7 @@
         document.getElementById('modalClientService').value = client.service;
         document.getElementById('modalClientStatus').value = client.status;
         document.getElementById('modalClientNotes').value = client.notes || '';
+        document.getElementById('modalTargetHours').value = client.targetHours || '25';
 
         const modal = document.getElementById('clientModal');
         const content = document.getElementById('clientModalContent');
@@ -1559,13 +1934,14 @@
         const value = Number(document.getElementById('modalClientValue').value);
         const status = document.getElementById('modalClientStatus').value;
         const notes = document.getElementById('modalClientNotes').value;
+        const targetHours = Number(document.getElementById('modalTargetHours').value) || 25;
 
         if (id) {
             const clientIdx = clients.findIndex(c => c.id === id);
             if (clientIdx !== -1) {
                 clients[clientIdx] = {
                     ...clients[clientIdx],
-                    name, company, email, phone, service, billingType, packageOption, value, status, notes
+                    name, company, email, phone, service, billingType, packageOption, value, status, notes, targetHours
                 };
                 showToast("Operational parameters updated");
                 if (selectedClientId === id) {
@@ -1575,7 +1951,8 @@
         } else {
             const newClient = {
                 id: "client-" + Date.now(),
-                name, company, email, phone, service, billingType, packageOption, value, status, notes,
+                name, company, email, phone, service, billingType, packageOption, value, status, notes, targetHours,
+                loggedHours: 0,
                 tasks: [
                     { id: "task-" + Date.now() + "-1", title: "Setup shared digital workspaces", completed: false },
                     { id: "task-" + Date.now() + "-2", title: "Review contract scope alignment in PGK", completed: false }
@@ -1730,7 +2107,6 @@
         showToast("Proposal copied to clipboard!");
     }
 
-    // Load initial settings parameters
     window.onload = function() {
         const publicPhone = localStorage.getItem('whimsy_public_phone') || '+675 7000 0000';
         document.getElementById('landing-phone-link').innerText = publicPhone;
